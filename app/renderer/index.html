@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>金钱卦 · 周易占筮</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="app">
+
+<!-- 后天八卦图（左上角） -->
+<div class="bagua-circle">
+  <span class="ba-trigram ba-t0" data-bg="离" title="离卦">☲</span>
+  <span class="ba-trigram ba-t1" data-bg="坤" title="坤卦">☷</span>
+  <span class="ba-trigram ba-t2" data-bg="兑" title="兑卦">☱</span>
+  <span class="ba-trigram ba-t3" data-bg="乾" title="乾卦">☰</span>
+  <span class="ba-trigram ba-t4" data-bg="坎" title="坎卦">☵</span>
+  <span class="ba-trigram ba-t5" data-bg="艮" title="艮卦">☶</span>
+  <span class="ba-trigram ba-t6" data-bg="震" title="震卦">☳</span>
+  <span class="ba-trigram ba-t7" data-bg="巽" title="巽卦">☴</span>
+  <span class="ba-center"></span>
+</div>
+<div class="ba-popup" id="ba-popup"></div>
+
+<!-- 干支历法卡片 -->
+<div class="ganzhi-card" id="ganzhi-card">
+  <div class="gz-main" id="gz-main">--</div>
+  <div class="gz-sub" id="gz-sub"></div>
+  <div class="gz-actions">
+    <span class="gz-date-label" id="gz-date-label"></span>
+    <input type="date" id="gz-date-picker" class="gz-date-picker" title="选择日期">
+  </div>
+</div>
+
+<div class="top-bar">
+  <h1 class="title"><span class="taiji-icon"></span> 金钱卦 · 周易占筮</h1>
+  <div class="top-right">
+    <input type="text" id="search-input" class="search-input" placeholder="搜卦名/序号..." autocomplete="off">
+    <div id="search-results" class="search-results" style="display:none"></div>
+    <button id="history-toggle" class="history-toggle">📋 历史</button>
+  </div>
+</div>
+
+<!-- Input area — centered when no results -->
+<div class="input-area" id="input-area">
+  <div class="input-hint-top">按 曾仕强 金钱卦方法，输入每次三枚铜钱的合计值</div>
+  <div class="input-row-wrap">
+    <input type="text" id="yao1" class="yao-num" maxlength="1" pattern="[6-9]" placeholder="初" autofocus>
+    <input type="text" id="yao2" class="yao-num" maxlength="1" pattern="[6-9]" placeholder="二">
+    <input type="text" id="yao3" class="yao-num" maxlength="1" pattern="[6-9]" placeholder="三">
+    <input type="text" id="yao4" class="yao-num" maxlength="1" pattern="[6-9]" placeholder="四">
+    <input type="text" id="yao5" class="yao-num" maxlength="1" pattern="[6-9]" placeholder="五">
+    <input type="text" id="yao6" class="yao-num" maxlength="1" pattern="[6-9]" placeholder="上">
+  </div>
+  <div class="input-legend">6 = 老阴 ⚋× ｜ 7 = 少阳 ⚊ ｜ 8 = 少阴 ⚋ ｜ 9 = 老阳 ⚊○</div>
+  <!-- 之卦直查 -->
+  <div class="zhi-gua-row" id="zhi-gua-row">
+    <input type="text" id="zhi-ben" class="zhi-gua-input" placeholder="本卦" autocomplete="off">
+    <span class="zhi-gua-zhi">之</span>
+    <input type="text" id="zhi-bian" class="zhi-gua-input" placeholder="之卦" autocomplete="off">
+  </div>
+
+  <div class="input-btns">
+    <button id="random-btn" class="random-btn">🎲 随机数字</button>
+    <button id="divinate-btn" class="divinate-btn"><span class="taiji-icon-sm"></span> 起卦</button>
+    <button id="clear-btn" class="clear-btn">✕ 清除</button>
+  </div>
+</div>
+
+<!-- Results -->
+<div class="results" id="results" style="display:none">
+  <div class="dual-gua" id="dual-gua">
+    <!-- Ben Gua -->
+    <div class="gua-card ben-gua" id="ben-card">
+      <div class="gua-label">本卦</div>
+      <div class="gua-header">
+        <span class="gua-unicode" id="ben-unicode"></span>
+        <div class="gua-header-text">
+          <span class="gua-name" id="ben-name"></span>
+          <span class="gua-number" id="ben-number"></span>
+          <span class="gua-shiyi" id="ben-shiyi"></span>
+        </div>
+      </div>
+      <div class="classics-area" id="ben-classics">
+        <div class="guaci-toggle" id="ben-guaci-toggle" style="display:none">
+          <div class="guaci-toggle-btn">📜 卦辞 ▾</div>
+          <div class="guaci-toggle-body" id="ben-guaci-body"></div>
+        </div>
+        <div class="tuan-toggle" id="ben-tuan-toggle" style="display:none">
+          <div class="tuan-toggle-btn">📖 彖传 ▾</div>
+          <div class="tuan-toggle-body" id="ben-tuan-body"></div>
+        </div>
+        <div class="daxiang-toggle" id="ben-daxiang-toggle" style="display:none">
+          <div class="daxiang-toggle-btn">🏔 大象传 ▾</div>
+          <div class="daxiang-toggle-body" id="ben-daxiang-body"></div>
+        </div>
+      </div>
+      <div class="gua-visual" id="ben-lines"></div>
+    </div>
+
+    <!-- Middle -->
+    <div class="middle-col" id="middle-col">
+      <div class="gua-arrow" id="gua-arrow"><span>→</span></div>
+      <div class="bian-title" id="bian-title"></div>
+      <div class="ref-box" id="ref-box"></div>
+    </div>
+
+    <!-- Bian Gua -->
+    <div class="gua-card bian-gua" id="bian-card">
+      <div class="gua-label">之卦</div>
+      <div class="gua-header">
+        <span class="gua-unicode" id="bian-unicode"></span>
+        <div class="gua-header-text">
+          <span class="gua-name" id="bian-name"></span>
+          <span class="gua-number" id="bian-number"></span>
+          <span class="gua-shiyi" id="bian-shiyi"></span>
+        </div>
+      </div>
+      <div class="classics-area" id="bian-classics">
+        <div class="guaci-toggle" id="bian-guaci-toggle" style="display:none">
+          <div class="guaci-toggle-btn">📜 卦辞 ▾</div>
+          <div class="guaci-toggle-body" id="bian-guaci-body"></div>
+        </div>
+        <div class="tuan-toggle" id="bian-tuan-toggle" style="display:none">
+          <div class="tuan-toggle-btn">📖 彖传 ▾</div>
+          <div class="tuan-toggle-body" id="bian-tuan-body"></div>
+        </div>
+        <div class="daxiang-toggle" id="bian-daxiang-toggle" style="display:none">
+          <div class="daxiang-toggle-btn">🏔 大象传 ▾</div>
+          <div class="daxiang-toggle-body" id="bian-daxiang-body"></div>
+        </div>
+      </div>
+      <div class="gua-visual" id="bian-lines"></div>
+    </div>
+  </div>
+</div>
+
+<!-- History -->
+<div class="history-panel" id="history-panel" style="display:none">
+  <div class="history-header">
+    <h2>📋 占卜历史</h2>
+    <div class="history-header-btns">
+      <button id="clear-cache-btn" class="history-clear-top" style="color:var(--text-secondary);">🧹 缓存</button>
+      <button id="history-close" class="history-close">✕</button>
+    </div>
+  </div>
+  <div class="history-list" id="history-list"></div>
+  <div class="history-empty" id="history-empty">暂无记录</div>
+  <button id="history-clear-all" class="history-clear-all">清空全部记录</button>
+</div>
+
+<!-- Notes modal -->
+<div class="modal-overlay" id="notes-modal" style="display:none">
+  <div class="modal-box">
+    <h3>添加备注</h3>
+    <textarea id="notes-textarea" rows="3" placeholder="输入备注..."></textarea>
+    <div class="modal-btns">
+      <button id="notes-save" class="modal-btn-save">保存</button>
+      <button id="notes-cancel" class="modal-btn-cancel">取消</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="copy-float" id="copy-float" style="display:none">复制</div>
+
+<script src="ganzhi.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
