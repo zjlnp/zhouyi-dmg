@@ -1,0 +1,45 @@
+{
+  "name": "zhouyi-coin-divination",
+  "version": "1.8.5",
+  "description": "金钱卦 - 周易占筮桌面软件",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --mac dmg",
+    "build:dir": "electron-builder --mac dmg --dir"
+  },
+  "build": {
+    "appId": "com.zhouyi.coin-divination",
+    "productName": "第二代金钱卦",
+    "directories": {
+      "output": "../build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "assets/**/*",
+      "data/**/*"
+    ],
+    "electronDownload": {
+      "mirror": "https://cdn.npmmirror.com/binaries/electron/"
+    },
+    "mac": {
+      "category": "public.app-category.reference",
+      "target": "dmg",
+      "icon": "assets/icon.icns"
+    },
+    "dmg": {
+      "title": "第二代金钱卦 v1.8.5",
+      "artifactName": "第二代金钱卦_v1.8.5-${arch}.${ext}",
+      "window": {
+        "width": 500,
+        "height": 400
+      }
+    }
+  },
+  "devDependencies": {
+    "electron": "^42.4.0",
+    "electron-builder": "^25.0.0"
+  }
+}
