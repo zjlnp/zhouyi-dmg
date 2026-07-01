@@ -1,0 +1,509 @@
+/* ===== 金钱卦 v1.5.3 ===== */
+:root {
+  --bg: #faf9f6; --card-bg: #fffffe; --text: #1a1a1a;
+  --text-secondary: #555; --text-muted: #999; --border: #e0dcd5;
+  --primary: #c44536; --gold: #b8860b;
+  --yang: #c44536; --yin: #2d2d2d;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Noto Serif SC', 'PingFang SC', 'STSong', 'SimSun', serif;
+  background: var(--bg); color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden; height: 100vh;
+}
+
+/* 后天八卦图（左侧中部） */
+.bagua-circle {
+  position: fixed; top: 50%; left: 28px; transform: translateY(-50%); z-index: 55;
+  width: 230px; height: 230px; user-select: none;
+  border: 2px solid rgba(0,0,0,0.05); border-radius: 50%;
+  background:
+    /* 八分扇形交替填色 + 分隔线 */
+    conic-gradient(from -67.5deg,
+      rgba(0,0,0,0.02) 0deg, rgba(0,0,0,0.02) 44.2deg,
+      rgba(0,0,0,0.035) 44.2deg, rgba(0,0,0,0.035) 45deg, transparent 45deg,
+      transparent 45deg, transparent 89.2deg,
+      rgba(0,0,0,0.035) 89.2deg, rgba(0,0,0,0.035) 90deg, transparent 90deg,
+      rgba(0,0,0,0.02) 90deg, rgba(0,0,0,0.02) 134.2deg,
+      rgba(0,0,0,0.035) 134.2deg, rgba(0,0,0,0.035) 135deg, transparent 135deg,
+      transparent 135deg, transparent 179.2deg,
+      rgba(0,0,0,0.035) 179.2deg, rgba(0,0,0,0.035) 180deg, transparent 180deg,
+      rgba(0,0,0,0.02) 180deg, rgba(0,0,0,0.02) 224.2deg,
+      rgba(0,0,0,0.035) 224.2deg, rgba(0,0,0,0.035) 225deg, transparent 225deg,
+      transparent 225deg, transparent 269.2deg,
+      rgba(0,0,0,0.035) 269.2deg, rgba(0,0,0,0.035) 270deg, transparent 270deg,
+      rgba(0,0,0,0.02) 270deg, rgba(0,0,0,0.02) 314.2deg,
+      rgba(0,0,0,0.035) 314.2deg, rgba(0,0,0,0.035) 315deg, transparent 315deg,
+      transparent 315deg, transparent 359.2deg,
+      rgba(0,0,0,0.035) 359.2deg, rgba(0,0,0,0.035) 360deg, transparent 360deg);
+  box-shadow: 0 3px 20px rgba(0,0,0,0.04);
+}
+.ba-trigram {
+  position: absolute; font-size: 24px; color: #3a3530;
+  font-family: serif; font-weight: 700; cursor: pointer;
+  width: 32px; height: 32px; text-align: center; line-height: 32px;
+  transition: all 0.2s;
+  border-radius: 50%; background: rgba(0,0,0,0.015);
+}
+.ba-trigram:hover { color: var(--primary); transform: scale(1.15); background: rgba(196,69,54,0.08); }
+/* 卦在标准方位（0°,45°,90°…），线在卦之间（22.5°,67.5°…） */
+/* R=85px, center=(115,115), 0°=顶顺时针 */
+/* 离☲ 0° */   .ba-t0 { top:14px;  left:99px;  }
+/* 坤☷ 45° */  .ba-t1 { top:39px;  left:159px; }
+/* 兑☱ 90° */  .ba-t2 { top:99px;  left:184px; }
+/* 乾☰ 135° */ .ba-t3 { top:159px; left:159px; }
+/* 坎☵ 180° */ .ba-t4 { top:184px; left:99px;  }
+/* 艮☶ 225° */ .ba-t5 { top:159px; left:39px;  }
+/* 震☳ 270° */ .ba-t6 { top:99px;  left:14px;  }
+/* 巽☴ 315° */ .ba-t7 { top:39px;  left:39px;  }
+
+.ba-center {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(180deg);
+  width: 62px; height: 62px; border-radius: 50%;
+  background: linear-gradient(to right, #f5f2eb 50%, #2d2a26 50%);
+  box-shadow: 0 0 0 6px rgba(0,0,0,0.025);
+}
+.ba-center::before {
+  content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 31px; height: 31px; border-radius: 50%;
+  background: radial-gradient(circle 4px at 50% 50%, #f5f2eb 100%, transparent 100%), #2d2a26;
+}
+.ba-center::after {
+  content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 31px; height: 31px; border-radius: 50%;
+  background: radial-gradient(circle 4px at 50% 50%, #2d2a26 100%, transparent 100%), #f5f2eb;
+}
+
+/* 卦象弹窗 */
+.ba-popup {
+  position: fixed; left: 272px; top: 50%; transform: translateY(-50%); z-index: 56;
+  background: var(--card-bg); border: 2px solid var(--primary-light); border-radius: 14px;
+  padding: 14px 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  font-size: 13px; line-height: 1.9; display: none; min-width: 170px;
+}
+.ba-popup.show { display: block; }
+.ba-popup .ba-name { font-size: 18px; font-weight: 700; color: var(--primary); }
+.ba-popup .ba-unicode { font-size: 36px; }
+#app {
+  width: 100%; max-width: 1100px; height: 100vh;
+  margin: 0 auto; display: flex; flex-direction: column;
+  padding: 12px 16px; position: relative;
+}
+
+/* ===== Top Bar ===== */
+.top-bar { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; padding-bottom: 4px; }
+.title { font-size: 26px; font-weight: 900; letter-spacing: 0.08em; display: flex; align-items: center; gap: 6px; }
+
+/* ===== 干支历法卡片（左上角） ===== */
+.ganzhi-card {
+  position: absolute; top: 52px; left: 16px; z-index: 60;
+  background: rgba(255,255,254,0.94); backdrop-filter: blur(10px);
+  border: 1.5px solid var(--border); border-radius: 14px;
+  padding: 14px 18px; box-shadow: 0 2px 14px rgba(0,0,0,0.05);
+  min-width: 240px; user-select: text; -webkit-user-select: text;
+}
+.gz-main {
+  font-size: 18px; font-weight: 800; color: var(--text);
+  font-family: 'Noto Serif SC', serif; letter-spacing: 0.06em; line-height: 1.4;
+}
+.gz-sub {
+  font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-top: 4px;
+  font-family: 'Noto Serif SC', serif;
+}
+.gz-actions {
+  display: flex; align-items: center; gap: 8px; margin-top: 8px;
+}
+.gz-date-label {
+  font-size: 11px; color: var(--text-muted); font-weight: 500;
+}
+.gz-date-picker {
+  width: 0; height: 0; opacity: 0; position: absolute; pointer-events: none;
+}
+.gz-date-btn {
+  font-size: 11px; color: var(--primary); cursor: pointer; font-weight: 600;
+  padding: 3px 10px; border: 1.5px solid var(--border); border-radius: 6px;
+  background: transparent; font-family: inherit;
+}
+.gz-date-btn:hover { background: #fdf2ef; }
+.gz-today-btn {
+  font-size: 11px; color: var(--text-muted); cursor: pointer; font-weight: 500;
+  padding: 3px 8px; border: 1.5px solid var(--border); border-radius: 6px;
+  background: transparent; font-family: inherit;
+}
+.gz-today-btn:hover { color: var(--primary); background: #fdf2ef; }
+
+/* === Pure CSS Taiji with S-curve & eyes === */
+.taiji-icon {
+  display: inline-block; width: 30px; height: 30px; border-radius: 50%;
+  background: linear-gradient(to right, #f5f2eb 50%, #2d2a26 50%);
+  position: relative; vertical-align: middle; flex-shrink: 0;
+}
+/* Top black circle with white eye */
+.taiji-icon::before {
+  content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 15px; height: 15px; border-radius: 50%;
+  background: radial-gradient(circle 2px at 50% 50%, #f5f2eb 100%, transparent 100%), #2d2a26;
+}
+/* Bottom white circle with black eye */
+.taiji-icon::after {
+  content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 15px; height: 15px; border-radius: 50%;
+  background: radial-gradient(circle 2px at 50% 50%, #2d2a26 100%, transparent 100%), #f5f2eb;
+}
+
+/* --- Small version for button (18px) --- */
+.taiji-icon-sm {
+  display: inline-block; width: 18px; height: 18px; border-radius: 50%;
+  background: linear-gradient(to right, #f5f2eb 50%, #2d2a26 50%);
+  position: relative; vertical-align: middle; flex-shrink: 0;
+}
+.taiji-icon-sm::before {
+  content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 9px; height: 9px; border-radius: 50%;
+  background: radial-gradient(circle 1.5px at 50% 50%, #f5f2eb 100%, transparent 100%), #2d2a26;
+}
+.taiji-icon-sm::after {
+  content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 9px; height: 9px; border-radius: 50%;
+  background: radial-gradient(circle 1.5px at 50% 50%, #2d2a26 100%, transparent 100%), #f5f2eb;
+}
+.top-right { display: flex; align-items: center; gap: 8px; position: relative; }
+.search-input {
+  width: 140px; padding: 6px 10px; font-size: 12px; font-family: inherit;
+  border: 1.5px solid var(--border); border-radius: 8px; background: var(--card-bg);
+  color: var(--text); outline: none; transition: all 0.2s;
+}
+.search-input:focus { border-color: var(--primary); width: 180px; }
+.search-input::placeholder { color: var(--text-muted); }
+.search-results {
+  position: absolute; top: 100%; right: 60px; margin-top: 4px;
+  width: 200px; max-height: 300px; overflow-y: auto;
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1); z-index: 50;
+}
+.search-result-item {
+  padding: 8px 14px; font-size: 13px; cursor: pointer; border-bottom: 1px solid #f5f2ec;
+  display: flex; align-items: center; gap: 8px;
+}
+.search-result-item:hover { background: #fdf2ef; }
+.search-result-item .sr-unicode { font-size: 20px; }
+.search-result-item .sr-name { font-weight: 600; }
+.search-result-item .sr-num { font-size: 10px; color: var(--text-muted); }
+
+.history-toggle {
+  padding: 7px 16px; font-size: 14px; font-weight: 600; font-family: inherit;
+  background: var(--card-bg); color: var(--text-secondary);
+  border: 1.5px solid var(--border); border-radius: 8px; cursor: pointer;
+}
+.history-toggle:hover { border-color: var(--primary); color: var(--primary); background: #fdf2ef; }
+
+/* ===== Input Area — centered by default ===== */
+.input-area {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 18px;
+}
+.input-hint-top { font-size: 15px; color: var(--text-secondary); letter-spacing: 0.05em; }
+
+.input-row-wrap { display: flex; gap: 12px; justify-content: center; }
+
+.yao-num {
+  width: 72px; height: 72px; font-size: 36px; font-weight: 900;
+  text-align: center; border: 3px solid var(--border); border-radius: 14px;
+  background: var(--card-bg); color: var(--text); outline: none; transition: all 0.15s;
+}
+.yao-num:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(196,69,54,0.1); transform: scale(1.05); background: #fff; }
+.yao-num.filled { border-color: var(--primary); background: #fef9f7; }
+.yao-num.invalid { animation: shake 0.3s; }
+.yao-num::placeholder { color: #ccc; font-size: 18px; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
+
+.input-legend { font-size: 14px; color: var(--text-muted); letter-spacing: 0.04em; }
+
+.input-btns { display: flex; gap: 14px; align-items: center; }
+
+/* Text selectable for all content */
+.gua-name, .gua-unicode, .gua-number, .gua-guaci-block, .guaci-toggle-body,
+.tuan-toggle-body, .daxiang-toggle-body, .yao-detail-drop, .yao-original,
+.yao-xiaoxiang, .yao-baihua, .ref-box, .bian-title, .yao-tag {
+  user-select: text; -webkit-user-select: text;
+}
+
+.divinate-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 14px 40px; font-size: 20px; font-weight: 700; font-family: inherit;
+  color: #fff; background: var(--primary); border: none;
+  border-radius: 12px; cursor: pointer; white-space: nowrap;
+  box-shadow: 0 3px 12px rgba(196,69,54,0.25);
+  transition: all 0.2s;
+}
+.divinate-btn:hover { background: #e07a5f; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(196,69,54,0.35); }
+
+.clear-btn {
+  padding: 10px 20px; font-size: 15px; font-weight: 600; font-family: inherit;
+  color: var(--text-muted); background: transparent;
+  border: 2px solid var(--border); border-radius: 12px; cursor: pointer;
+}
+.clear-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+.random-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 14px 40px; font-size: 20px; font-weight: 700; font-family: inherit;
+  color: #fff; background: #5a7a6a; border: none;
+  border-radius: 12px; cursor: pointer; white-space: nowrap;
+  box-shadow: 0 3px 12px rgba(90,122,106,0.25);
+  transition: all 0.2s;
+}
+.random-btn:hover { background: #4a6a5a; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(90,122,106,0.35); }
+
+/* ===== Results ===== */
+.results { overflow-y: auto; display: flex; align-items: flex-start; justify-content: center; min-height: 0; padding: 8px 0; }
+.dual-gua { display: flex; gap: 8px; justify-content: center; align-items: stretch; width: 100%; }
+
+/* ===== Gua Card ===== */
+.gua-card {
+  flex: 0 0 420px; width: 420px;
+  background: var(--card-bg); border: 1.5px solid var(--border);
+  border-radius: 16px; padding: 14px 20px 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative;
+  display: flex; flex-direction: column; align-items: center;
+}
+.ben-gua { border-top: 4px solid var(--primary); }
+.bian-gua { border-top: 4px solid var(--gold); }
+
+.gua-label {
+  position: absolute; top: -14px; left: 18px;
+  background: var(--primary); color: #fff;
+  font-size: 14px; font-weight: 700; padding: 4px 18px; border-radius: 7px;
+  letter-spacing: 0.2em; min-width: 64px; text-align: center;
+}
+.bian-gua .gua-label { background: var(--gold); }
+
+.gua-header { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 4px 0 6px; }
+.gua-unicode { font-size: 48px; line-height: 1; }
+.gua-header-text { text-align: center; }
+.gua-name { font-size: 22px; font-weight: 900; display: block; }
+.gua-number { font-size: 11px; color: var(--text-muted); display: block; }
+.gua-shiyi { font-size: 11px; color: var(--primary); display: block; margin-top: 2px; line-height: 1.5; }
+
+.guaci-toggle { margin: 2px 0 8px; text-align: center; }
+.guaci-toggle-btn {
+  font-size: 13px; font-weight: 600; color: var(--primary); cursor: pointer;
+  display: inline-block; padding: 5px 14px; border: 1px solid var(--border);
+  border-radius: 6px; background: #fefaf7; user-select: none;
+}
+.guaci-toggle-btn:hover { background: #fdf2ef; border-color: var(--primary); }
+.guaci-toggle-body {
+  display: none; margin-top: 4px; padding: 8px 14px;
+  background: #fdfaf5; border-radius: 8px; border: 1px solid rgba(0,0,0,0.04);
+  font-size: 15px; font-weight: 600; line-height: 1.7;
+}
+.guaci-toggle.open .guaci-toggle-body { display: block; }
+.guaci-toggle.open .guaci-toggle-btn { background: #fdf2ef; border-color: var(--primary); }
+.guaci-toggle .baihua { display: block; font-size: 13px; color: var(--primary); font-weight: 400; margin-top: 3px; }
+
+/* 彖传 / 大象传 toggles (same style as guaci) */
+.classics-area { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 2px 0 8px; }
+.tuan-toggle, .daxiang-toggle { text-align: center; }
+.tuan-toggle-btn, .daxiang-toggle-btn {
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  display: inline-block; padding: 4px 10px; border: 1px solid var(--border);
+  border-radius: 6px; background: #fefaf7; user-select: none; color: var(--text-secondary);
+}
+.tuan-toggle-btn:hover, .daxiang-toggle-btn:hover { background: #fdf2ef; border-color: var(--primary); color: var(--primary); }
+.tuan-toggle-body, .daxiang-toggle-body {
+  display: none; margin-top: 4px; padding: 8px 14px;
+  background: #fdfaf5; border-radius: 8px; border: 1px solid rgba(0,0,0,0.04);
+  font-size: 14px; font-weight: 500; line-height: 1.7; color: var(--text);
+}
+.tuan-toggle.open .tuan-toggle-body { display: block; }
+.tuan-toggle.open .tuan-toggle-btn { background: #fdf2ef; border-color: var(--primary); }
+.daxiang-toggle.open .daxiang-toggle-body { display: block; }
+.daxiang-toggle.open .daxiang-toggle-btn { background: #fdf2ef; border-color: var(--primary); }
+.tuan-toggle .baihua { display: block; font-size: 12px; color: var(--primary); font-weight: 400; margin-top: 3px; }
+.daxiang-toggle .baihua { display: block; font-size: 12px; color: var(--primary); font-weight: 400; margin-top: 3px; }
+
+/* 小象传 in yao detail */
+.yao-xiaoxiang { font-weight: 500; color: #8b6914; font-size: 13px; }
+
+/* ===== Gua Visual ===== */
+.gua-visual { display: flex; flex-direction: column; align-items: center; gap: 7px; width: 100%; padding: 6px 0; }
+
+.gua-line-row { width: 100%; }
+.gua-line-row.changing { border-left: 3px dashed var(--gold); }
+.gua-line-row.changed { border-left: 3px dotted #c4956b; }
+.gua-line-main {
+  display: flex; align-items: center; gap: 0;
+  padding: 7px 0; cursor: pointer; border-radius: 4px; transition: background 0.15s;
+}
+.gua-line-main:hover { background: #fdfaf6; }
+
+/* Left area: expand + marker */
+.gua-line-left {
+  width: 36px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 2px;
+}
+.gua-line-main .expand-icon { font-size: 10px; color: var(--text-muted); transition: transform 0.2s; }
+.gua-line-row.open .expand-icon { transform: rotate(90deg); }
+.gua-line-main .change-marker { font-size: 14px; color: var(--gold); font-weight: 700; }
+
+/* Center: bar */
+.gua-line-bar-wrap { flex: 1; display: flex; justify-content: center; align-items: center; }
+.gua-line-main .yang-bar { width: 200px; height: 20px; background: var(--yang); border-radius: 5px; flex-shrink: 0; }
+.gua-line-main .yin-bar { display: flex; gap: 26px; flex-shrink: 0; }
+.gua-line-main .yin-bar .half { width: 87px; height: 20px; background: var(--yin); border-radius: 5px; flex-shrink: 0; }
+
+.gua-line-row.changing .yang-bar { background: var(--gold); box-shadow: 0 0 12px rgba(184,134,11,0.3); animation: pulse 2s infinite; }
+.gua-line-row.changing .yin-bar .half { background: var(--gold); box-shadow: 0 0 12px rgba(184,134,11,0.3); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{box-shadow:0 0 6px rgba(184,134,11,0.2)} 50%{box-shadow:0 0 18px rgba(184,134,11,0.4)} }
+@media (prefers-reduced-motion: reduce) { .gua-line-row.changing .yang-bar, .gua-line-row.changing .yin-bar .half { animation: none; } }
+
+/* Changed yaos in bian gua use same colors as ben gua, slightly muted */
+.gua-line-row.changed .yang-bar { background: #d4756a; }
+.gua-line-row.changed .yin-bar .half { background: #5a5a5a; }
+
+/* Right: yao name + shi/ying */
+.gua-line-right {
+  width: 72px; flex-shrink: 0; display: flex; align-items: center; justify-content: flex-end; gap: 2px;
+}
+.gua-line-main .yao-tag { font-size: 11px; color: var(--text-muted); white-space: nowrap; font-weight: 500; }
+.gua-line-row.changing .yao-tag { color: var(--gold); font-weight: 700; }
+.gua-line-row.changed .yao-tag { color: var(--gold); }
+.yao-tag.has-shi { color: var(--primary) !important; font-weight: 700 !important; }
+.yao-tag.has-ying { font-weight: 600 !important; }
+
+.yao-detail-drop {
+  display: none; padding: 6px 16px 8px 40px;
+  font-size: 13px; line-height: 1.8; color: var(--text-secondary);
+  border-top: 1px dashed #f0ede6; background: #fdfbf8;
+}
+.gua-line-row.open .yao-detail-drop { display: block; }
+.gua-line-row.changing .yao-detail-drop { background: linear-gradient(135deg, #fef9e7, #fefcf5); }
+.yao-detail-drop .yao-original { font-weight: 600; color: var(--text); font-size: 14px; }
+.yao-detail-drop .yao-baihua { color: var(--primary); margin-top: 3px; font-size: 13px; }
+
+/* ===== Middle Column ===== */
+.middle-col {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6px; min-width: 140px; max-width: 160px;
+}
+
+/* Arrow between hexagrams */
+.gua-arrow {
+  width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+}
+.gua-arrow::before {
+  content: ''; display: block; width: 14px; height: 14px;
+  border: 2.5px solid var(--primary); border-left: none; border-bottom: none;
+  transform: rotate(45deg); margin-left: -4px;
+}
+.gua-arrow span { display: none; }
+
+/* 之卦标题 */
+.bian-title {
+  font-size: 15px; font-weight: 700; font-family: 'Noto Serif SC', serif;
+  color: var(--gold); text-align: center; padding: 2px 0; letter-spacing: 0.05em;
+  user-select: text; -webkit-user-select: text;
+}
+
+.ref-box {
+  width: 100%;
+  font-size: 13px; line-height: 1.6;
+  background: #fffdf7; border: 2px solid rgba(184,134,11,0.25);
+  border-radius: 10px; padding: 10px 14px; text-align: center;
+}
+.ref-box .ref-rule { font-weight: 700; color: var(--gold); font-size: 13px; margin-bottom: 4px; }
+.ref-box .ref-text { color: var(--text); font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+.ref-box .ref-baihua { color: var(--primary); font-size: 12px; }
+
+/* 之卦直查 */
+.zhi-gua-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px; }
+.zhi-gua-zhi {
+  font-size: 16px; font-weight: 700; color: var(--gold);
+  font-family: 'Noto Serif SC', serif; user-select: none;
+}
+.zhi-gua-input {
+  width: 90px; padding: 8px 12px; font-size: 14px; font-weight: 600; font-family: inherit;
+  border: 2px solid var(--border); border-radius: 10px;
+  background: var(--card-bg); color: var(--text); text-align: center; outline: none;
+  transition: border-color 0.2s;
+}
+.zhi-gua-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(184,134,11,0.1); }
+.zhi-gua-input::placeholder { color: var(--text-muted); font-size: 12px; font-weight: 400; }
+
+/* Collapse input area when results shown */
+#app.has-results .input-area {
+  flex: 0 0 auto; padding: 4px 0; gap: 4px;
+}
+#app.has-results .input-hint-top { font-size: 11px; }
+#app.has-results .yao-num { width: 44px; height: 44px; font-size: 22px; border-width: 2px; }
+#app.has-results .yao-num::placeholder { font-size: 12px; }
+#app.has-results .input-legend { font-size: 11px; }
+#app.has-results .divinate-btn { padding: 8px 18px; font-size: 14px; }
+#app.has-results .clear-btn { padding: 6px 14px; font-size: 13px; }
+#app.has-results .random-btn { padding: 8px 18px; font-size: 14px; }
+#app.has-results .input-row-wrap { gap: 6px; }
+#app.has-results .zhi-gua-row { margin-bottom: 2px; }
+#app.has-results .zhi-gua-input { width: 70px; padding: 4px 6px; font-size: 12px; }
+#app.has-results .zhi-gua-zhi { font-size: 13px; }
+#app.has-results .input-btns { gap: 8px; }
+#app.has-results .results { flex: 1; min-height: 0; overflow-y: auto; align-items: flex-start; }
+
+/* ===== History Panel ===== */
+.history-panel {
+  position: fixed; top: 0; right: 0; width: 360px; height: 100vh;
+  background: var(--card-bg); box-shadow: -4px 0 24px rgba(0,0,0,0.1);
+  z-index: 100; display: flex; flex-direction: column;
+  padding: 16px; overflow-y: auto;
+}
+.history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.history-header h2 { font-size: 18px; font-weight: 700; }
+.history-header-btns { display: flex; gap: 6px; align-items: center; }
+.history-clear-top { padding: 4px 10px; font-size: 12px; font-weight: 600; font-family: inherit; border: 1px solid var(--border); background: transparent; border-radius: 6px; cursor: pointer; color: var(--primary); }
+.history-clear-top:hover { background: #fdf2ef; border-color: var(--primary); }
+.history-close { width: 28px; height: 28px; font-size: 14px; font-weight: 600; border: 1px solid var(--border); background: transparent; border-radius: 6px; cursor: pointer; color: var(--text-muted); }
+.history-close:hover { border-color: var(--primary); color: var(--primary); }
+.history-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.history-empty { text-align: center; color: var(--text-muted); font-size: 14px; padding: 40px 0; }
+.history-item { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; background: #fdfcf9; cursor: pointer; }
+.history-item:hover { border-color: var(--primary); background: #fef9f7; }
+.history-item .hi-time { font-size: 11px; color: var(--text-muted); }
+.history-item .hi-title { font-size: 14px; font-weight: 700; margin: 2px 0; }
+.history-item .hi-lines { font-size: 11px; color: var(--text-muted); }
+.history-item .hi-note { font-size: 11px; color: var(--text-muted); margin-top: 4px; cursor: pointer; user-select: none; }
+.history-item .hi-note:hover { color: var(--primary); }
+.history-item .hi-note::after { content: ' ▾'; font-size: 9px; }
+.history-item .hi-note.open::after { content: ' ▴'; }
+.history-item .hi-note-text { display: none; font-size: 12px; color: var(--primary); margin-top: 2px; font-style: italic; padding: 4px 8px; background: #fefaf7; border-radius: 4px; }
+.history-item .hi-note.open + .hi-note-text { display: block; }
+.history-item .hi-btns { display: flex; gap: 6px; margin-top: 6px; }
+.hi-btn { font-size: 11px; padding: 2px 10px; border: 1px solid var(--border); background: var(--bg); border-radius: 4px; cursor: pointer; font-family: inherit; }
+.hi-btn:hover { border-color: var(--primary); color: var(--primary); }
+.hi-btn.del:hover { border-color: var(--primary); color: #fff; background: var(--primary); }
+.history-clear-all { margin-top: 12px; padding: 8px; font-size: 12px; font-family: inherit; border: 1px solid var(--border); background: transparent; border-radius: 8px; cursor: pointer; color: var(--text-muted); }
+.history-clear-all:hover { border-color: var(--primary); color: var(--primary); }
+
+/* ===== Modal ===== */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; z-index: 200; }
+.modal-box { background: var(--card-bg); border-radius: 14px; padding: 20px 24px; min-width: 360px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); }
+.modal-box h3 { font-size: 16px; font-weight: 700; margin-bottom: 12px; }
+.modal-box textarea { width: 100%; padding: 10px 12px; font-size: 14px; font-family: inherit; border: 1.5px solid var(--border); border-radius: 8px; resize: vertical; background: var(--bg); outline: none; }
+.modal-box textarea:focus { border-color: var(--primary); }
+.modal-btns { display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; }
+.modal-btn-save { padding: 8px 20px; font-size: 14px; font-weight: 600; font-family: inherit; color: #fff; background: var(--primary); border: none; border-radius: 8px; cursor: pointer; }
+.modal-btn-cancel { padding: 8px 20px; font-size: 14px; font-family: inherit; color: var(--text-secondary); background: transparent; border: 1.5px solid var(--border); border-radius: 8px; cursor: pointer; }
+
+/* Floating copy button */
+.copy-float {
+  position: fixed; z-index: 300;
+  padding: 4px 12px; font-size: 12px; font-weight: 600; font-family: inherit;
+  color: #fff; background: var(--primary); border-radius: 6px;
+  cursor: pointer; user-select: none; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  transition: opacity 0.15s;
+}
+.copy-float:hover { background: var(--primary-light); }
+.copy-float.copied { background: #4a9e6e; }
+
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
